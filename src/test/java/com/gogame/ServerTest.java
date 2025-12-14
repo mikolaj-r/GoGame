@@ -1,6 +1,6 @@
 package com.gogame;
 
-import com.gogame.server.Game;
+import com.gogame.controller.Game;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

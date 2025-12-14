@@ -1,44 +1,115 @@
 package com.gogame.server;
 
+import com.gogame.Board;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
+    private Board board;
     private Socket socket;
-    private Scanner in;
+    private BufferedReader in;
     private PrintWriter out;
+    private Scanner console;
+    private boolean isMyTurn = false;
 
-    public Client(String serverAddress) {
-        try {
-            socket = new Socket(serverAddress, 8001);
+    public void start() throws Exception {
+        socket = new Socket("localhost", 8001);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new PrintWriter(socket.getOutputStream(), true);
+        console = new Scanner(System.in);
 
-            this.in = new Scanner(socket.getInputStream());
-            this.out = new PrintWriter(socket.getOutputStream(), true);
+        // Creator - Klient tworzy swoją planszę do wyświetlania
+        board = new Board();
+        board.updateBreaths();
 
-        } catch (IOException e) {
-            System.err.println("CANT CONNECT TO SERVER: " + e.getMessage());
-            System.exit(1);
+        System.out.println("Connected to server.");
+
+        // Pętla nasłuchująca komunikatów od serwera
+        String response;
+        while ((response = in.readLine()) != null) {
+            if (response.startsWith("INIT")) {
+                String color = response.split(" ")[1];
+                System.out.println("You are player: " + color);
+                board.show();
+            }
+            else if (response.startsWith("MESSAGE")) {
+                System.out.println("Server: " + response.substring(8));
+            }
+            else if (response.startsWith("ERROR")) {
+                System.out.println(response.substring(6));
+                if(isMyTurn) handleInput();
+            }
+            else if (response.equals("YOUR_TURN")) {
+                isMyTurn = true;
+                System.out.println("Your move or PASS:");
+                handleInput();
+            }
+            else if (response.startsWith("MOVE_OK")) {
+                String[] parts = response.split(" ");
+                int row = Integer.parseInt(parts[1]);
+                int col = Integer.parseInt(parts[2]);
+                boolean isBlack = parts[3].equals("true");
+
+                board.move(row, col, isBlack);
+                board.updateBreaths();
+                board.checkBoard();
+
+                System.out.println("\nBoard updated:");
+                board.show();
+                isMyTurn = false;
+            }
+            else if (response.equals("GAME_OVER")) {
+                System.out.println("Game Over!");
+                break;
+            }
         }
     }
 
-    public void play() {
-        Thread listener = new Thread(() -> {
-            try {
-                while (in.hasNextLine()) {
-                    String response = in.nextLine();
-                    System.out.println("SERVER: " + response);
-                }
-            } catch (Exception e) {
-                System.out.println("LOST CONNECTION");
+    private void handleInput() {
+        while (true) {
+            String input = console.nextLine().trim().toUpperCase();
+            if (input.equals("PASS")) {
+                out.println("PASS");
+                break;
             }
-        });
-        listener.start();
+
+            if (input.length() < 2) {
+                System.out.println("Invalid format. Use ColRow (e.g. A1).");
+                continue;
+            }
+
+            char colChar = input.charAt(0);
+            if (colChar < 'A' || colChar > 'S') {
+                System.out.println("Invalid column.");
+                continue;
+            }
+
+            try {
+                int col = colChar - 'A';
+                String rowStr = input.substring(1);
+                int row = Integer.parseInt(rowStr) - 1; // Konwersja 1-19 na 0-18
+
+                if (row < 0 || row > 18) {
+                    System.out.println("Row out of bounds.");
+                    continue;
+                }
+
+                // Wysyłamy przetworzone współrzędne do serwera
+                out.println("MOVE " + row + " " + col);
+                break;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid row number.");
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
-        Client client = new Client("localhost");
-        client.play();
+        new Client().start();
     }
 }

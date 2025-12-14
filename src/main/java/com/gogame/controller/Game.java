@@ -1,54 +1,102 @@
-package com.gogame.server;
+package com.gogame.controller;
 
+import com.gogame.Board;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Game {
-    Player currentPlayer;
+public class Game extends Thread {
+    private Socket playerBlack;
+    private Socket playerWhite;
+    private Board masterBoard;
 
-    public Game() {
-        // Inicjacja planszy
+
+    public Game(Socket black, Socket white) {
+        this.playerBlack = black;
+        this.playerWhite = white;
+        this.masterBoard = new Board();
+        this.masterBoard.updateBreaths();
     }
+    @Override
+    public void run() {
+        try {
+            BufferedReader inBlack = new BufferedReader(new InputStreamReader(playerBlack.getInputStream()));
+            PrintWriter outBlack = new PrintWriter(playerBlack.getOutputStream(), true);
+            BufferedReader inWhite = new BufferedReader(new InputStreamReader(playerWhite.getInputStream()));
+            PrintWriter outWhite = new PrintWriter(playerWhite.getOutputStream(), true);
 
-    class Player extends Thread {
-        int mark;
-        Socket socket;
-        Scanner input;
-        PrintWriter output;
+            outBlack.println("INIT BLACK");
+            outWhite.println("INIT WHITE");
 
-        public Player(Socket socket, int mark) {
-            this.socket = socket;
-            this.mark = mark;
-        }
+            boolean blackTurn = true;
+            boolean keepPlaying = true;
+            int passCount = 0;
 
-        @Override
-        public void run() {
-            try {
-                setup();
-                while (true) {
-                    if (input.hasNextLine()) {
-                        String command = input.nextLine();
-                        // Pozniej tu bedzie obsluga komend
+            while (keepPlaying) {
+                // Ustalenie aktywnego gracza
+                PrintWriter currentOut = blackTurn ? outBlack : outWhite;
+                BufferedReader currentIn = blackTurn ? inBlack : inWhite;
+                PrintWriter opponentOut = blackTurn ? outWhite : outBlack;
+                int serverColorId = blackTurn ? 2 : 1; // Zgodnie z Board: 1=Biały, 2=Czarny
+
+                currentOut.println("YOUR_TURN");
+                opponentOut.println("MESSAGE Opponent is thinking...");
+
+                String input = currentIn.readLine();
+                if (input == null) break;
+
+                if (input.equals("PASS")) {
+                    passCount++;
+                    currentOut.println("MESSAGE You passed.");
+                    opponentOut.println("MESSAGE Opponent passed.");
+                    if (passCount >= 2) {
+                        outBlack.println("GAME_OVER");
+                        outWhite.println("GAME_OVER");
+                        keepPlaying = false;
                     }
-                }
-            } catch (Exception e) {
-                System.out.println("ERROR FOR " + mark + ": " + e);
-            } finally {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    System.out.println("ERROR IN CLOSING: " + e);
+                    blackTurn = !blackTurn;
+                } else if (input.startsWith("MOVE")) {
+                    // Oczekiwany format od klienta: "MOVE <row> <col>"
+                    // Klient już przeliczył A1 na liczby, serwer tylko waliduje.
+                    String[] parts = input.split(" ");
+                    int row = Integer.parseInt(parts[1]);
+                    int col = Integer.parseInt(parts[2]);
+
+                    // Information Expert - Board decyduje czy ruch jest legalny
+                    if (masterBoard.checkMove(row, col)) {
+                        passCount = 0;
+
+                        // Wykonaj ruch na serwerze
+                        masterBoard.move(row, col, blackTurn);
+                        masterBoard.updateBreaths();
+                        masterBoard.checkBoard();
+
+                        // Wyślij potwierdzenie ruchu do obu klientów, aby zaktualizowali swoje plansze
+                        String moveCmd = "MOVE_OK " + row + " " + col + " " + (blackTurn ? "true" : "false");
+                        outBlack.println(moveCmd);
+                        outWhite.println(moveCmd);
+
+                        blackTurn = !blackTurn;
+                    } else {
+                        currentOut.println("ERROR Invalid move. Try again");
+                    }
+                } else if (input.equals("QUIT")) {
+                    keepPlaying = false;
                 }
             }
-        }
-
-        private void setup() throws IOException {
-            input = new Scanner(socket.getInputStream());
-            output = new PrintWriter(socket.getOutputStream(), true);
-
-            output.println("CONNECTED. YOU PLAY AS: " + (mark == 1 ? "BLACK" : "WHITE"));
+        } catch (IOException e) {
+            System.out.println("Disconnection: " + e.getMessage());
+        } finally {
+            try {
+                playerBlack.close();
+                playerWhite.close();
+            } catch (IOException e) {
+                System.out.println("Server related problem: " + e.getMessage());
+            }
         }
     }
 }
