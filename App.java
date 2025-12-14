@@ -3,12 +3,18 @@ import java.util.Scanner;
 
 public class App
 {
+
+    // GRASP: Controller
+    // App steruje przebiegiem gry (tury, pętle, zakończenie gry),
+    // ale nie zawiera logiki planszy
     public static int pointsBlack = 0;
     public static int pointsWhite = 0;
 
-
+    // GRASP: Pure Fabrication
+    // Metoda pomocnicza do walidacji wejścia użytkownika,
+    // nie należy ani do Board, ani do Cell
     public static boolean validInput(String input) {
-
+  
 
         if(input.equals("PASS"))
             return true;
@@ -32,10 +38,16 @@ public class App
     }
 
     public static void main( String[] args ) throws Exception {
+        // GRASP: Creator
+        // App tworzy Board, bo nim zarządza i go używa
         Board board = new Board();
         board.updateBreaths();
         boolean keepGoing = true;
+        
+        // GRASP: Controller
+        // App decyduje czyja tura, a nie Board
         boolean turn = true;     //true - black, false - white
+        
         boolean blackPass = false;
         boolean whitePass = false;
         char columnChar;
@@ -50,6 +62,8 @@ public class App
         board.show();
         while(keepGoing)
         {
+            // GRASP: Controller
+            // Centralna petla steruje przebiegiem gry
             if(turn)
             {
                 System.out.println("Black to move!");
@@ -65,6 +79,8 @@ public class App
                 isInputCorrect = false;
                 System.out.print("Your move : ");
                 move = cin.nextLine().trim().toUpperCase();
+                // GRASP: Pure Fabrication
+                // Walidacja wejścia wydzielona poza Board
                 if(validInput(move))
                     isInputCorrect = true;
                 else
@@ -78,6 +94,9 @@ public class App
                         column = columnChar - 'A';
                         rowStr = move.substring(1);
                         row = Integer.parseInt(rowStr) - 1;
+                         // GRASP: Information Expert
+                        // Board zna stan planszy i decyduje o poprawności ruchu
+                        // (checkMove)
                         if (!board.checkMove(row, column))
                             System.out.println("Incorrect input, try again");
                         if (board.checkMove(row, column))
@@ -94,6 +113,10 @@ public class App
                 column = columnChar - 'A';
                 rowStr = move.substring(1);
                 row = Integer.parseInt(rowStr) - 1;
+                
+                // GRASP: Information Expert
+                // Board modyfikuje swój stan po ruchu
+                // (move, updateBreaths, checkBoard)
                 board.move(row, column, turn); //turn true - black
                 board.updateBreaths();
                 board.checkBoard();
@@ -106,8 +129,10 @@ public class App
                 turn = !turn;
 
             }
-            else
+            else  
             {
+                // GRASP: Controller
+                // App zarządza logiką passów i zakończenia gry
                 if(turn)
                     blackPass = true;
                 if(!turn)
