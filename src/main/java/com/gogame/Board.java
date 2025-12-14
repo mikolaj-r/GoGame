@@ -1,4 +1,4 @@
-
+package com.gogame;
 
 public class Board
 {
