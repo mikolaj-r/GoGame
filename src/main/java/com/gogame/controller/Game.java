@@ -57,6 +57,7 @@ public class Game extends Thread {
                         outBlack.println("GAME_OVER");
                         outWhite.println("GAME_OVER");
                         keepPlaying = false;
+                        break;
                     }
                     blackTurn = !blackTurn;
                 } else if (input.startsWith("MOVE")) {
@@ -95,7 +96,7 @@ public class Game extends Thread {
                 playerBlack.close();
                 playerWhite.close();
             } catch (IOException e) {
-                System.out.println("Server related problem: " + e.getMessage());
+                System.out.println("Session ended");
             }
         }
     }

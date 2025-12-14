@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
 
 public class Client {
@@ -30,43 +31,54 @@ public class Client {
         System.out.println("Connected to server.");
 
         // Pętla nasłuchująca komunikatów od serwera
-        String response;
-        while ((response = in.readLine()) != null) {
-            if (response.startsWith("INIT")) {
-                String color = response.split(" ")[1];
-                System.out.println("You are player: " + color);
-                board.show();
-            }
-            else if (response.startsWith("MESSAGE")) {
-                System.out.println("Server: " + response.substring(8));
-            }
-            else if (response.startsWith("ERROR")) {
-                System.out.println(response.substring(6));
-                if(isMyTurn) handleInput();
-            }
-            else if (response.equals("YOUR_TURN")) {
-                isMyTurn = true;
-                System.out.println("Your move or PASS:");
-                handleInput();
-            }
-            else if (response.startsWith("MOVE_OK")) {
-                String[] parts = response.split(" ");
-                int row = Integer.parseInt(parts[1]);
-                int col = Integer.parseInt(parts[2]);
-                boolean isBlack = parts[3].equals("true");
+        try {
+            String response;
+            // Pętla czytająca komunikaty serwera
+            while ((response = in.readLine()) != null) {
+                if (response.startsWith("INIT")) {
+                    String color = response.split(" ")[1];
+                    System.out.println("You are player: " + color);
+                    board.show();
+                }
+                else if (response.startsWith("MESSAGE")) {
+                    System.out.println("Server: " + response.substring(8));
+                }
+                else if (response.startsWith("ERROR")) {
+                    System.out.println(response.substring(6));
+                    if(isMyTurn) handleInput();
+                }
+                else if (response.equals("YOUR_TURN")) {
+                    isMyTurn = true;
+                    System.out.println("Your move (e.g. A1) or PASS:");
+                    handleInput();
+                }
+                else if (response.startsWith("MOVE_OK")) {
+                    String[] parts = response.split(" ");
+                    int row = Integer.parseInt(parts[1]);
+                    int col = Integer.parseInt(parts[2]);
+                    boolean isBlack = parts[3].equals("true");
 
-                board.move(row, col, isBlack);
-                board.updateBreaths();
-                board.checkBoard();
+                    board.move(row, col, isBlack);
+                    board.updateBreaths();
+                    board.checkBoard();
 
-                System.out.println("\nBoard updated:");
-                board.show();
-                isMyTurn = false;
+                    System.out.println("\nBoard updated:");
+                    board.show();
+                    isMyTurn = false;
+                }
+                else if (response.equals("GAME_OVER")) {
+                    System.out.println("Game Over! (Score calculated on server logs)");
+                    break; // Wychodzimy z pętli poprawnie
+                }
             }
-            else if (response.equals("GAME_OVER")) {
-                System.out.println("Game Over!");
-                break;
-            }
+        } catch (SocketException e) {
+            System.out.println("Connection closed by server");
+        } catch (IOException e) {
+            System.out.println("I/O ERROR: " + e.getMessage());
+        } finally {
+            // Sprzątanie
+            try { socket.close(); } catch (IOException e) {}
+            System.out.println("Client closed.");
         }
     }
 
@@ -110,6 +122,10 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-        new Client().start();
+        try {
+            new Client().start();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
