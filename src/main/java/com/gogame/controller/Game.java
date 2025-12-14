@@ -9,6 +9,18 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+/**
+ * Controller
+ * Pełni rolę Kontrolera. Steruje przepływem zdarzeń w grze, waliduje ruchy wykorzystując model Board
+ *
+ * High Cohesion
+ * Skupia się wyłącznie na logice przebiegu gry, nie zajmuje się łączeniem w sieci ani wyswietlaniem planszy
+ *
+ * Wzorzec facade
+ * Ukrywa złożoność logiki gry, obsługi strumieni wejścia/wyjścia
+ * oraz synchronizacji graczy, udostępniając prosty interfejs uruchomieniowy (metoda run)
+ */
+
 public class Game extends Thread {
     private Socket playerBlack;
     private Socket playerWhite;
@@ -60,6 +72,10 @@ public class Game extends Thread {
                         break;
                     }
                     blackTurn = !blackTurn;
+
+                //Wzorzec command
+                //Komunikacja odbywa się poprzez przesyłanie poleceń w formie tekstowej
+                //i zamienia polecenia na konkretne instrukcje
                 } else if (input.startsWith("MOVE")) {
                     // Oczekiwany format od klienta: "MOVE <row> <col>"
                     // Klient już przeliczył A1 na liczby, serwer tylko waliduje.
