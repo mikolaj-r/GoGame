@@ -7,6 +7,11 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/**
+ * Creator
+ * pełni rolę "twórcy" dla obiektów Game.
+ */
+
 public class Server {
     public static void main(String[] args) throws Exception {
         try (ServerSocket listener = new ServerSocket(8001)) {
