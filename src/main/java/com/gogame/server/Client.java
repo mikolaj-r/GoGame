@@ -10,7 +10,19 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Scanner;
 
+/**
+ * Pure Fabrication
+ * Obsługuje komunikacje sieciową i interakcje z użytkownikiem.
+ * Służy jako adapter między graczem a serwerem.
+ *
+ * Low Coupling
+ * Klient nie decyduje o poprawności ruchów (zależy to od serwera).
+ */
+
 public class Client {
+    // wzorzec proxy
+    // Obiekt board jest lokalnym reprezentantem stanu gry.
+    // Nie wykonuje walidacji, wyswietla to co zatwierdzone przez serwer.
     private Board board;
     private Socket socket;
     private BufferedReader in;
