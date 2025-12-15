@@ -53,7 +53,6 @@ public class Game extends Thread {
                 PrintWriter currentOut = blackTurn ? outBlack : outWhite;
                 BufferedReader currentIn = blackTurn ? inBlack : inWhite;
                 PrintWriter opponentOut = blackTurn ? outWhite : outBlack;
-                int serverColorId = blackTurn ? 2 : 1; // Zgodnie z Board: 1=Biały, 2=Czarny
 
                 currentOut.println("YOUR_TURN");
                 opponentOut.println("MESSAGE Opponent is thinking...");

@@ -80,7 +80,7 @@ public class Client {
                 }
                 else if (response.equals("GAME_OVER")) {
                     System.out.println("Game Over! (Score calculated on server logs)");
-                    break; // Wychodzimy z pętli poprawnie
+                    break;
                 }
             }
         } catch (SocketException e) {
@@ -88,7 +88,6 @@ public class Client {
         } catch (IOException e) {
             System.out.println("I/O ERROR: " + e.getMessage());
         } finally {
-            // Sprzątanie
             try { socket.close(); } catch (IOException e) {}
             System.out.println("Client closed.");
         }

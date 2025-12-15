@@ -103,7 +103,7 @@ public class Board
         // Board zna stan planszy, więc decyduje,
         // czy ruch na dane pole jest legalny
         if(positions[row][column].color == 0)
-        return true;
+            return true;
 
         return false;
     }
@@ -143,19 +143,14 @@ public class Board
            for(int j = 0; j < 19; j++)
            {
                if(positions[i][j].color == 0)
-                   System.out.print("·");
+                   System.out.print("+");
                if(positions[i][j].color == 1)
-                   System.out.print("●");
+                   System.out.print("0");
                if(positions[i][j].color == 2)
-                   System.out.print("○");
+                   System.out.print("X");
                System.out.print(" ");
            }
            System.out.println();
        }
     }
-
-
-
-
-
 }
