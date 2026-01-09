@@ -1,12 +1,10 @@
 # GoGame
 Java Application for the game of Go
 
---------
-
-## Compiling
+### Compiling
 `mvn package`
 
-## Running
+### Running
 #### Server:
 ```
 cd target
